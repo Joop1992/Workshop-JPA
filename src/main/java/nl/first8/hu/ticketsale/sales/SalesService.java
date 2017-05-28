@@ -1,18 +1,20 @@
 package nl.first8.hu.ticketsale.sales;
 
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.Date;
-import nl.first8.hu.ticketsale.registration.Account;
-import nl.first8.hu.ticketsale.registration.RegistrationRepository;
-import nl.first8.hu.ticketsale.venue.VenueRepository;
+import java.util.List;
+import java.util.Optional;
+
+import javax.transaction.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
-import java.util.List;
-import java.util.Optional;
+import nl.first8.hu.ticketsale.registration.Account;
+import nl.first8.hu.ticketsale.registration.RegistrationRepository;
+import nl.first8.hu.ticketsale.sales.audittrail.AuditTrail;
 import nl.first8.hu.ticketsale.venue.Concert;
+import nl.first8.hu.ticketsale.venue.VenueRepository;
 
 @Service
 public class SalesService {
@@ -32,21 +34,45 @@ public class SalesService {
     public void insertSale(Long accountId, Long ticketId, Integer price) {
         insertSale(accountId, ticketId, price, Date.from(Instant.now()));
     }
-
+    
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    public void insertAuditTrail(Sale sale, Long accountId) {
+    	AuditTrail auditTrail = new AuditTrail(sale.getId(), accountId);
+    	salesRepository.insert(auditTrail);
+    }
+    
     protected void insertSale(Long accountId, Long concertId, Integer price, final Date timestamp) {
         Account account = registrationRepository.findById(accountId).orElseThrow(() -> new RuntimeException("Unknown account Id " + accountId));
         Concert concert = venueRepository.findConcertById(concertId).orElseThrow(() -> new RuntimeException("Unknown concert Id " + concertId));
 
         Ticket ticket = new Ticket(concert, account);
-        salesRepository.insert(ticket);
 
         Sale sale = new Sale();
         sale.setTicket(ticket);
-        sale.setPrice(price);
         sale.setSellDate(timestamp);
+        
+        //default price as a workaround, will later be injected
+        sale.setPrice(2);
+
+        salesRepository.insert(ticket);	        	
+        
+    	/*Important! If this is removed there will be 2 Stackoverflow exceptions, Why? Dunno but don't remove*/
+        System.err.println("Account: " + account);		        
 
         salesRepository.insert(sale);
+        AuditTrail trail = new AuditTrail(sale.getId(), accountId);
+        
+        insertAuditTrail(sale, accountId);
+       
+        if(price > 0 ) {
+        	sale.setPrice(price);
+        	salesRepository.save(sale);
+        } else {
+        	salesRepository.deleteSale(sale.getId());
+        	salesRepository.deleteTicket(ticket);
+        }
     }
+    
 
     public Optional<Sale> getSale(Long accountId, Long concertId) {
         Account account = registrationRepository.findById(accountId).orElseThrow(() -> new RuntimeException("Unknown account Id " + accountId));

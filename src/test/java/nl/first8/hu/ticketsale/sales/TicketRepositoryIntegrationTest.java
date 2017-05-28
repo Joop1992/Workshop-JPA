@@ -55,7 +55,7 @@ public class TicketRepositoryIntegrationTest {
 
     @Before
     public void cleanDatabase() {
-        JdbcTestUtils.deleteFromTables(jdbcTemplate, "sale", "ticket", "account");
+        JdbcTestUtils.deleteFromTables(jdbcTemplate, "sale", "ticket", "account", "audit_trail", "concert", "artist", "location");
     }
 
     @Test
@@ -94,9 +94,9 @@ public class TicketRepositoryIntegrationTest {
 
         List<TicketDto> actualTickets = readTicketsResponse(result);
         assertEquals(2, actualTickets.size());
-        assertEquals(ticketGorillaz.getConcert().getArtist(), actualTickets.get(0).getArtist());
+        assertEquals(ticketGorillaz.getConcert().getArtist().getName(), actualTickets.get(0).getArtist());
         assertEquals(ticketGorillaz.getConcert().getLocation().getName(), actualTickets.get(0).getLocation());
-        assertEquals(ticketThieveryCo.getConcert().getArtist(), actualTickets.get(1).getArtist());
+        assertEquals(ticketThieveryCo.getConcert().getArtist().getName(), actualTickets.get(1).getArtist());
         assertEquals(ticketGorillaz.getConcert().getLocation().getName(), actualTickets.get(0).getLocation());
 
 
@@ -136,7 +136,7 @@ public class TicketRepositoryIntegrationTest {
                         .param("account_id", account.getId().toString())
                         .param("concert_id", concert.getId().toString())
                         .param("price", Integer.toString(0))
-        ).andExpect(status().isConflict());
+        ).andExpect(status().isNotFound());
 
 
         Ticket createdTicket = entityManager.find(Ticket.class, new TicketId(concert, account));

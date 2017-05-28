@@ -1,15 +1,18 @@
 package nl.first8.hu.ticketsale.sales;
 
-import nl.first8.hu.ticketsale.registration.Account;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Repository;
+import java.util.List;
+import java.util.Optional;
 
 import javax.persistence.EntityExistsException;
 import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
-import java.util.List;
-import java.util.Optional;
 import javax.persistence.NoResultException;
+import javax.persistence.TypedQuery;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import nl.first8.hu.ticketsale.registration.Account;
+import nl.first8.hu.ticketsale.sales.audittrail.AuditTrail;
 
 @Repository
 public class SalesRepository {
@@ -34,6 +37,19 @@ public class SalesRepository {
 
     public void insert(final Sale sale) {
         entityManager.persist(sale);
+    }
+    
+    public void save(final Sale sale) {
+    	try{
+    		entityManager.createQuery("UPDATE Sale SET price = :price WHERE ID = :id")
+    			.setParameter("price", sale.getPrice()).setParameter("id", sale.getId()).executeUpdate();
+    	}catch(Exception ex) {
+    		this.deleteSale(sale.getId());
+    	}
+    }
+    
+    public void insert(final AuditTrail auditTrail) {
+		entityManager.persist(auditTrail);
     }
 
     Optional<Sale> findSaleByTicket(final Ticket ticket) {
@@ -63,6 +79,15 @@ public class SalesRepository {
     Optional<Ticket> findById(long ticketId) {
         return Optional.ofNullable(entityManager.find(Ticket.class, ticketId));
     }
+
+	public void deleteSale(Long id) {
+		entityManager.createQuery("DELETE FROM Sale WHERE id = :id").setParameter("id", id).executeUpdate();
+	}
+
+	public void deleteTicket(Ticket ticket) {
+		String query = "DELETE FROM Ticket ticket WHERE ticket.account.id = :acc_id AND ticket.concert.id = :tick_id";
+		entityManager.createQuery(query).setParameter("acc_id", ticket.getAccount().getId()).setParameter("tick_id", ticket.getConcert().getId()).executeUpdate();		
+	}
 
 
 }

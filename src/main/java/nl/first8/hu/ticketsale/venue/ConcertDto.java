@@ -1,10 +1,5 @@
 package nl.first8.hu.ticketsale.venue;
 
-import java.io.Serializable;
-
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
@@ -12,20 +7,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Artist implements Serializable {
-	
+public class ConcertDto {
 	@Id
 	@GeneratedValue
 	private Long id;
 	
-	private String name;
+	private Long artist_id;
 	
-	@Enumerated(EnumType.STRING)
-	private Genre genre;
-	
-	
+	private Long location_id;
 }

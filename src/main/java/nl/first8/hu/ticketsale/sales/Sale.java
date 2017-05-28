@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class Sale implements Serializable {
-
+	
     @Id
     @GeneratedValue
     private Long id;

@@ -40,6 +40,7 @@ public class RegistrationResource {
                     .orElse(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
 
         } catch (RuntimeException ex) {
+        	ex.printStackTrace();
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
     }
